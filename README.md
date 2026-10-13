@@ -22,7 +22,7 @@ a Word document's styles and links are checked, HTML pages come in a sandbox.
 ## Install
 
 ```sh
-npm install github:andrew-mart/file-views#v0.3.2
+npm install github:andrew-mart/file-views#v0.4.0
 # the libraries the views load as they go are yours to install — those of the files you show; a server that only
 # renders markdown (file-views/core) needs none of them
 npm install pdfjs-dist@^6.3.289 docx-preview@^0.4.0 jszip@^3.10.2 mermaid@^11.17.2
@@ -45,6 +45,9 @@ const view = renderFile(
 view.dispose();
 ```
 
+`view.document` is, for a page, a PDF or a Word document, what it can do once drawn — the same as `renderDocument`
+gives, below; for other files, and for a document that could not be drawn, nothing.
+
 `host` is what your server does for the views:
 
 | Field | What it is |
@@ -65,15 +68,62 @@ from the assets, with an import map:
 <script type="importmap">{ "imports": { "file-views": "/file-views/file-views.js" } }</script>
 ```
 
+### A document on its own
+
+A page, a PDF or a Word document drawn where you want it, with what it can do once drawn:
+
+```js
+import { hasDocumentView, renderDocument } from 'file-views';
+
+if (hasDocumentView(kind)) {
+  const view = await renderDocument(container, {
+    kind, // 'html', 'pdf' or 'docx'
+    url, // its bytes — a page's address, what it loads beside it resolved under it
+    assets, // the address of the library's assets
+    scripts: 'off', // a page's scripts
+    scroller: container, // what scrolls a PDF's pages; undefined — the window
+    fit: 'width', // a Word document's pages fitted to the width, or 'none' — left to your zoom
+  });
+  view.reveal?.(); // a page is hidden until its look is laid: set its zoom, its dark look, its place first
+}
+```
+
+Each gives what it can — none of the fields but `dispose` are there for every kind:
+
+| Field | What it is |
+|---|---|
+| `dispose()` | lets go of what it holds — a PDF's pages, a page's listeners |
+| `reveal()` | a page: shows it |
+| `scroll` | a page: its window's scroll — `get`, `set`, `subscribe`; with its scripts on, by messages from the scroll bridge your server adds (`withScrollBridge`) |
+| `headings()` | a page, a PDF's outline, a Word document's heading styles: `{ level, text, node }` for a table of contents |
+| `offsetOf(node)` | a page: a heading's place in its window |
+| `keys` | a page: its window, where keys pressed in it go |
+| `finder` | finding in it, below |
+| `setZoom(zoom)` | a page: its own zoom |
+| `rezoom()` | a PDF: drawn again after your zoom of the container changed |
+| `setDark(on)` | a page: a dark look laid over it — not an inversion, its pictures left as they are |
+
+A page with scripts on lives in an origin of its own: it cannot be read, so it has no headings, no finder, no dark look.
+
+`domFinder(root, { viewTop, scroller })` finds in a document drawn in your page — a markdown one, say. A finder's
+`search(pattern)` lights every match and says how many, `show(index)` lights one as the current and brings it into
+view, `firstInView()` is the one to start from, `clear()` lights none. Matches are lit with the CSS Custom Highlight
+API, `::highlight(fv-find)` and `::highlight(fv-find-current)`, no element added. `queryPattern(query)` makes the
+pattern — any case, ё as е, a space for any white space; `stepMatch(index, count, direction)` goes round them.
+
+`drawDiagrams(doc, { assets, theme, labels })` draws a markdown document's mermaid blocks as pictures, or those drawn
+again in another theme; `labels` — your words for a picture's alternative text and for a diagram not drawn.
+
 The pieces are there too, for a page that draws on its own — and, needing no page, from `file-views/core` for a server
 that renders markdown itself: `kindOfPath`, `hasSource`, `renderMarkdown`,
 `docLinkTarget`, `splitFrontMatter`, `csvDelimiterOf`, `csvLines`, `codeLanguage`, `codeLanguages`,
-`languageOfPath`, `highlightCode`, and a Word document's checks `keepsDocxSelector`, `localUrlsOnly`, `keepsDocxLink`.
+`languageOfPath`, `highlightCode`, `queryPattern`, `stepMatch`, and a Word document's checks `keepsDocxSelector`,
+`localUrlsOnly`, `keepsDocxLink`.
 
 ## On the server
 
 ```js
-import { assetFile, decodeText, folderFileAt, sandboxPolicy } from 'file-views/server';
+import { assetFile, decodeText, folderFileAt, sandboxPolicy, withScrollBridge } from 'file-views/server';
 ```
 
 - `assetFile(path)` — the file of the library's assets at a path under their address: `file-views.js`,
@@ -85,6 +135,8 @@ import { assetFile, decodeText, folderFileAt, sandboxPolicy } from 'file-views/s
   runs no script — also when the page is opened in a tab of its own — or, asked to, runs them in an origin of their
   own, out of reach of your page and of what your server sends it.
 - `decodeText(bytes)` — UTF-8, its mark at the head dropped; what is not UTF-8 as Windows-1251.
+- `withScrollBridge(page)` — a page's bytes with a small script at their end that tells your page its scroll and
+  takes one to go back to: send a page with scripts on so, when you keep its place. `scrollBridge` is that script.
 
 A route for documents, say `/doc/<folder in base64url>/<path from it>`, so a page's relative addresses resolve in its
 folder:

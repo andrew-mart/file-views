@@ -21,66 +21,72 @@ const pieceSandbox = 'allow-same-origin';
 const piecePolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src data: blob:; font-src data: blob:";
 
 /**
- * @param {{ url: string, assets: string }} source — url: the document's bytes; assets: the address of the library's
- *   assets
- * @returns {{ element: HTMLElement, dispose: () => void }}
+ * @typedef {import('./page.js').Heading} Heading
+ * @typedef {{ dispose: () => void, headings: () => Heading[] }} DocxView
  */
-export function renderDocx({ url, assets }) {
-  const element = h('div', { className: 'fv-docx' }, [h('div', { className: 'fv-message', text: 'Loading…' })]);
-  let disposed = false;
-  /** @type {ResizeObserver | undefined} */
-  let fitting;
 
-  const start = async () => {
-    // docx-preview finds JSZip as a global of the page
-    await loadLibrary('JSZip', new URL('jszip.js', assets).href);
-    const docx = await loadLibrary('docx', new URL('docx-preview.js', assets).href);
-    if (!isDocxPreview(docx)) throw new Error('docx-preview is not what file-views knows');
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('the file did not come');
-    const bytes = await response.blob();
-    if (disposed) return;
-    const pages = h('div', { className: 'fv-docx-pages' });
-    // the library puts the document's styles here, out of the page: they go in checked
-    const styles = h('div');
-    await docx.renderAsync(bytes, pages, styles, {
-      inWrapper: true,
-      breakPages: true,
-      renderAltChunks: true,
-      h: sandboxingPieces(docx.defaultOptions.h),
-      renderHeaders: true,
-      renderFooters: true,
-      ignoreLastRenderedPageBreak: false,
-    });
-    if (disposed) return;
-    pages.prepend(...[...styles.querySelectorAll('style')].map((style) => checkedStyle(style.textContent ?? '')));
-    for (const link of pages.querySelectorAll('a[href]')) keepLink(link, pages);
-    element.replaceChildren(pages);
-    // a page wider than the room is made smaller to fit, and again as the room gets wider or narrower
-    const wrapper = pages.querySelector('.docx-wrapper');
-    if (!(wrapper instanceof HTMLElement)) return;
-    const widest = Math.max(...[...wrapper.querySelectorAll(':scope > section')].map((page) => (page instanceof HTMLElement ? page.offsetWidth : 0)));
-    let room = 0;
-    fitting = new ResizeObserver(() => {
-      // its height changes with the scale; only a new width is fitted to
-      if (element.clientWidth === room) return;
-      room = element.clientWidth;
-      wrapper.style.zoom = widest > room - 2 * margin && room > 2 * margin ? String((room - 2 * margin) / widest) : '';
-    });
-    fitting.observe(element);
-  };
-
-  void start().catch((/** @type {unknown} */ error) => {
-    if (!disposed) element.replaceChildren(h('div', { className: 'fv-message', text: `The document is not shown: ${error instanceof Error ? error.message : String(error)}` }));
+/**
+ * @param {HTMLElement} container — the pages take its place
+ * @param {{ url: string, assets: string, fit: 'width' | 'none' }} source — url: the document's bytes; assets: the
+ *   address of the library's assets; fit: a page wider than the room made smaller to fit, as the room changes — or left
+ *   to the host's own zoom
+ * @returns {Promise<DocxView>} — once the pages are drawn
+ */
+export async function renderDocx(container, { url, assets, fit }) {
+  // docx-preview finds JSZip as a global of the page
+  await loadLibrary('JSZip', new URL('jszip.js', assets).href);
+  const docx = await loadLibrary('docx', new URL('docx-preview.js', assets).href);
+  if (!isDocxPreview(docx)) throw new Error('docx-preview is not what file-views knows');
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('the file did not come');
+  const bytes = await response.blob();
+  const pages = h('div', { className: 'fv-docx' });
+  container.replaceChildren(pages);
+  // the library puts the document's styles here, out of the page: they go in checked
+  const styles = h('div');
+  await docx.renderAsync(bytes, pages, styles, {
+    inWrapper: true,
+    breakPages: true,
+    renderAltChunks: true,
+    h: sandboxingPieces(docx.defaultOptions.h),
+    renderHeaders: true,
+    renderFooters: true,
+    ignoreLastRenderedPageBreak: false,
   });
-
+  pages.prepend(...[...styles.querySelectorAll('style')].map((style) => checkedStyle(style.textContent ?? '')));
+  for (const link of pages.querySelectorAll('a[href]')) keepLink(link, pages);
+  const fitting = fit === 'width' ? fitToWidth(pages) : undefined;
   return {
-    element,
-    dispose() {
-      disposed = true;
-      fitting?.disconnect();
-    },
+    dispose: () => fitting?.disconnect(),
+    // Word's headings are no h1–h6 but paragraphs of a style: docx-preview puts it in their class — docx_heading1,
+    // docx_heading2 — the level at its end
+    headings: () =>
+      [...pages.querySelectorAll('p[class*="docx_heading"]')].flatMap((node) => {
+        const level = Number(/docx_heading(\d)/.exec(node.className)?.[1]);
+        return Number.isFinite(level) ? [{ level, text: node.textContent ?? '', node }] : [];
+      }),
   };
+}
+
+/**
+ * The pages made smaller to fit when wider than the room, and again as the room gets wider or narrower: the widest
+ * sets the scale for all.
+ * @param {HTMLElement} pages
+ * @returns {ResizeObserver | undefined}
+ */
+function fitToWidth(pages) {
+  const wrapper = pages.querySelector('.docx-wrapper');
+  if (!(wrapper instanceof HTMLElement)) return undefined;
+  const widest = Math.max(...[...wrapper.querySelectorAll(':scope > section')].map((page) => (page instanceof HTMLElement ? page.offsetWidth : 0)));
+  let room = 0;
+  const fitting = new ResizeObserver(() => {
+    // its height changes with the scale; only a new width is fitted to
+    if (pages.clientWidth === room) return;
+    room = pages.clientWidth;
+    wrapper.style.zoom = widest > room - 2 * margin && room > 2 * margin ? String((room - 2 * margin) / widest) : '';
+  });
+  fitting.observe(pages);
+  return fitting;
 }
 
 /** Room around the pages, px. */

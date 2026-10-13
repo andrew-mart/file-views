@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { assetFile, decodeText, folderFileAt, sandboxPolicy } from '../src/server/index.js';
+import { assetFile, decodeText, folderFileAt, sandboxPolicy, withScrollBridge } from '../src/server/index.js';
 
 const limits = { maxBytes: 1000 };
 
@@ -74,4 +74,13 @@ test('assetFile_Should_FindLibraryFiles_And_NothingAboveTheirFolders', () => {
   });
 
   assert.deepEqual({ found, missing: ['nope.js', 'pdfjs/cmaps/../../package.json', 'pdfjs/'].map(assetFile) }, { found: [true, true, true, true, true, true, true, true], missing: [undefined, undefined, undefined] });
+});
+
+// A page with scripts reports its scroll by a bridge added at the end of its file: the page's bytes stay as they were
+test('withScrollBridge_Should_AddBridgeAfterPageUntouched', () => {
+  const page = new TextEncoder().encode('<!doctype html><p>hi</p>');
+
+  const bridged = new TextDecoder().decode(withScrollBridge(page));
+
+  assert.deepEqual({ head: bridged.startsWith('<!doctype html><p>hi</p><script>'), reports: bridged.includes("fileViews: 'scroll'"), goesBack: bridged.includes("e.data.fileViews !== 'scroll-to'") }, { head: true, reports: true, goesBack: true });
 });

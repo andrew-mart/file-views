@@ -151,7 +151,7 @@ test('renderFile_Should_DrawPdfAndWordAsPages_WithoutAskingForText', async () =>
   await settled();
 
   assert.deepEqual(
-    { pdf: [pdf.shown.kind, pdf.container.querySelector(':scope > .fv-pdf') !== null], word: [word.shown.kind, word.container.querySelector(':scope > .fv-docx') !== null], asked },
+    { pdf: [pdf.shown.kind, pdf.container.querySelector(':scope > .fv-document') !== null], word: [word.shown.kind, word.container.querySelector(':scope > .fv-document') !== null], asked },
     { pdf: ['pdf', true], word: ['docx', true], asked: [] },
   );
 });

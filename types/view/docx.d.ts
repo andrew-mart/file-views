@@ -1,14 +1,23 @@
 /**
- * @param {{ url: string, assets: string }} source — url: the document's bytes; assets: the address of the library's
- *   assets
- * @returns {{ element: HTMLElement, dispose: () => void }}
+ * @typedef {import('./page.js').Heading} Heading
+ * @typedef {{ dispose: () => void, headings: () => Heading[] }} DocxView
  */
-export function renderDocx({ url, assets }: {
+/**
+ * @param {HTMLElement} container — the pages take its place
+ * @param {{ url: string, assets: string, fit: 'width' | 'none' }} source — url: the document's bytes; assets: the
+ *   address of the library's assets; fit: a page wider than the room made smaller to fit, as the room changes — or left
+ *   to the host's own zoom
+ * @returns {Promise<DocxView>} — once the pages are drawn
+ */
+export function renderDocx(container: HTMLElement, { url, assets, fit }: {
     url: string;
     assets: string;
-}): {
-    element: HTMLElement;
+    fit: "width" | "none";
+}): Promise<DocxView>;
+export type Heading = import("./page.js").Heading;
+export type DocxView = {
     dispose: () => void;
+    headings: () => Heading[];
 };
 /**
  * The part of docx-preview the view uses: its own element builder, wrapped, and the drawing.

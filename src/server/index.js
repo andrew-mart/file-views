@@ -164,3 +164,70 @@ export function assetFile(path) {
   }
   return undefined;
 }
+
+/**
+ * The scroll bridge of a page with scripts: such a page has an origin of its own and the host's page cannot read its
+ * document, so its scroll goes by messages — page to host { fileViews: 'scroll', top } after scrolling, at most every
+ * 50 ms (a timer, not a frame: a window not in view has no frames); host to page { fileViews: 'scroll-to', top } to go
+ * back to a place. Going back may not hold at once — the order comes at load, before the page may have its size, and the
+ * browser cuts the scroll to nothing — so the place is kept and set again while the document grows, until it holds, 3 s
+ * pass, or the reader scrolls. The bridge listens only to the parent window, the host only to its frame (view/page.js):
+ * a page can fake a scroll message and spoil only its own kept place. Plain ASCII, added at the end of the page's file:
+ * neither its doctype nor its encoding are touched.
+ */
+export const scrollBridge = `<script>
+(function () {
+  var host = window.parent;
+  if (host === window) return;
+  var root = document.documentElement;
+  var sent = null;
+  var queued = false;
+  var wanted = null;
+  var until = 0;
+  function report() {
+    queued = false;
+    var top = Math.round(window.scrollY);
+    if (top === sent) return;
+    sent = top;
+    host.postMessage({ fileViews: 'scroll', top: top }, '*');
+  }
+  function place() {
+    if (wanted === null) return;
+    window.scrollTo({ top: wanted, left: 0, behavior: 'instant' });
+    if (Math.round(window.scrollY) >= wanted || Date.now() > until) wanted = null;
+  }
+  function release() {
+    wanted = null;
+  }
+  window.addEventListener('scroll', function () {
+    if (queued) return;
+    queued = true;
+    setTimeout(report, 50);
+  }, { passive: true });
+  ['wheel', 'keydown', 'pointerdown', 'touchstart'].forEach(function (type) {
+    window.addEventListener(type, release, { passive: true, capture: true });
+  });
+  new ResizeObserver(place).observe(root);
+  window.addEventListener('resize', place);
+  window.addEventListener('message', function (e) {
+    if (e.source !== host || !e.data || e.data.fileViews !== 'scroll-to' || typeof e.data.top !== 'number') return;
+    wanted = e.data.top;
+    until = Date.now() + 3000;
+    place();
+  });
+})();
+</script>
+`;
+
+/**
+ * A page's file with the scroll bridge at its end.
+ * @param {Uint8Array} page
+ * @returns {Uint8Array}
+ */
+export function withScrollBridge(page) {
+  const bridge = new TextEncoder().encode(scrollBridge);
+  const bridged = new Uint8Array(page.length + bridge.length);
+  bridged.set(page);
+  bridged.set(bridge, page.length);
+  return bridged;
+}

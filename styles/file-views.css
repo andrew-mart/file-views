@@ -287,7 +287,41 @@
   cursor: zoom-out;
 }
 
-/* ---------- A page in a frame: it fills the container and scrolls itself; its own ground, white unless it says
+/* ---------- A document drawn by its own viewer: in a holder that fills the container when it holds a page ---------- */
+
+.fv-document {
+  min-height: 100%;
+  background: var(--fv-page-ground, transparent);
+}
+
+.fv-document:has(> .fv-frame) {
+  height: 100%;
+}
+
+/* ---------- Finding: every match, and the current one over them; in a PDF's invisible text layer the text stays
+   invisible ---------- */
+
+::highlight(fv-find) {
+  background-color: #ffe25a;
+  color: #111;
+}
+
+::highlight(fv-find-current) {
+  background-color: #ff9632;
+  color: #111;
+}
+
+.fv-pdf-page .textLayer span::highlight(fv-find) {
+  background-color: rgb(255 214 0 / 0.45);
+  color: transparent;
+}
+
+.fv-pdf-page .textLayer span::highlight(fv-find-current) {
+  background-color: rgb(255 128 0 / 0.6);
+  color: transparent;
+}
+
+/* ---------- A page in a frame: it fills the holder and scrolls itself; its own ground, white unless it says
    otherwise ---------- */
 
 .fv-frame {
@@ -299,11 +333,6 @@
 }
 
 /* ---------- A PDF's pages: white sheets with a shadow, one under another ---------- */
-
-.fv-pdf {
-  min-height: 100%;
-  background: var(--fv-page-ground, transparent);
-}
 
 .fv-pages {
   display: flex;
@@ -400,13 +429,13 @@
   user-select: none;
 }
 
+/* while a PDF's text is being selected, nothing else can be (view/pdf.js) */
+body.fv-pdf-selecting {
+  user-select: none;
+}
+
 /* ---------- A Word document's pages, as a PDF's are, not on docx-preview's grey; made smaller to fit when wider
    (view/docx.js) ---------- */
-
-.fv-docx {
-  min-height: 100%;
-  background: var(--fv-page-ground, transparent);
-}
 
 .fv-docx .docx-wrapper {
   align-items: center;

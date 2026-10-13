@@ -3,9 +3,9 @@
 // its columns coloured, text and code with numbered lines, a picture, a PDF or a Word document as its pages.
 import { h } from '../dom.js';
 import { kindOfPath } from '../kind.js';
-import { renderDocx } from './docx.js';
+import { isRecord } from '../narrow.js';
+import { hasDocumentView, renderDocument } from './documents.js';
 import { renderMarkdownDocument } from './markdown.js';
-import { renderPdf } from './pdf.js';
 import { renderText } from './text.js';
 
 /**
@@ -27,8 +27,11 @@ import { renderText } from './text.js';
  * @property {(() => 'light' | 'dark') | undefined} [theme] the page's theme, for diagrams; light without it
  * @typedef {{ view: 'document' | 'source', scripts: 'on' | 'off' }} ViewOptions — view: a markdown document or a page
  *   drawn, or its text; scripts: whether a page runs its scripts
- * @typedef {{ kind: FileKind, dispose: () => void }} FileView — dispose: lets go of what the view holds — a PDF's
- *   pages — and of what still loads
+ * @typedef {import('./documents.js').DocumentView} DocumentView
+ * @typedef {{ kind: FileKind, dispose: () => void, document: Promise<DocumentView | undefined> }} FileView — dispose:
+ *   lets go of what the view holds — a PDF's pages — and of what still loads; document: what a page, a PDF or a Word
+ *   document drawn by its own viewer can do — find in it, list its headings — once it is drawn; none for other files
+ *   and for one that could not be drawn
  */
 
 /**
@@ -42,17 +45,28 @@ import { renderText } from './text.js';
 export function renderFile(container, target, options, host) {
   const kind = kindOfPath(target.path);
   let disposed = false;
-  let letGo = () => {};
+  /** @type {Promise<DocumentView | undefined>} */
+  let drawn = Promise.resolve(undefined);
   const show = (/** @type {Node} */ node) => {
     if (!disposed) container.replaceChildren(node);
   };
   if (kind === 'image') show(renderImage(host.imageUrl(target.path), target.path));
-  else if (kind === 'html' && options.view === 'document') show(renderPage(host.documentUrl(target.path, options.scripts), target.path, options.scripts));
-  else if (kind === 'pdf' || kind === 'docx') {
-    const url = host.documentUrl(target.path, 'off');
-    const pages = kind === 'pdf' ? renderPdf({ url, assets: host.assets, scroller: container }) : renderDocx({ url, assets: host.assets });
-    letGo = pages.dispose;
-    show(pages.element);
+  else if (hasDocumentView(kind) && (kind !== 'html' || options.view === 'document')) {
+    // drawn in a holder of its own: a viewer that finishes after the file was left fills a holder no longer shown
+    const holder = h('div', { className: 'fv-document' }, [message('Loading…')]);
+    show(holder);
+    const scripts = kind === 'html' ? options.scripts : 'off';
+    drawn = renderDocument(holder, { kind, url: host.documentUrl(target.path, scripts), assets: host.assets, scripts, scroller: container, fit: 'width' }).then(
+      (view) => {
+        if (disposed) view.dispose();
+        else view.reveal?.();
+        return view;
+      },
+      (/** @type {unknown} */ error) => {
+        holder.replaceChildren(message(notShown(kind, error)));
+        return undefined;
+      },
+    );
   } else {
     show(message('Loading…'));
     void host.text(target.path).then((reply) => {
@@ -68,22 +82,21 @@ export function renderFile(container, target, options, host) {
     kind,
     dispose() {
       disposed = true;
-      letGo();
+      void drawn.then((view) => view?.dispose());
     },
+    document: drawn,
   };
 }
 
 /**
- * A page drawn in a frame from its folder, what it loads beside it coming from there too. Its scripts off: no script
- * runs, and the frame shares the host's origin only to be drawn; on: they run in an origin of their own, out of reach
- * of the host's page.
- * @param {string} url
- * @param {string} path
- * @param {'on' | 'off'} scripts
+ * Why a document is not shown, in words.
+ * @param {import('./documents.js').DocumentKind} kind
+ * @param {unknown} error
  */
-function renderPage(url, path, scripts) {
-  const sandbox = `${scripts === 'on' ? 'allow-scripts' : 'allow-same-origin'} allow-popups allow-popups-to-escape-sandbox`;
-  return h('iframe', { className: 'fv-frame', title: path, attrs: { sandbox, src: url, referrerpolicy: 'no-referrer' } });
+function notShown(kind, error) {
+  if (isRecord(error) && error.name === 'PasswordException') return 'The PDF is locked with a password and is not shown.';
+  const what = kind === 'html' ? 'page' : kind === 'pdf' ? 'PDF' : 'document';
+  return `The ${what} is not shown: ${error instanceof Error ? error.message : String(error)}`;
 }
 
 /**

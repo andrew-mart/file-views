@@ -17,8 +17,11 @@
  * @property {(() => 'light' | 'dark') | undefined} [theme] the page's theme, for diagrams; light without it
  * @typedef {{ view: 'document' | 'source', scripts: 'on' | 'off' }} ViewOptions — view: a markdown document or a page
  *   drawn, or its text; scripts: whether a page runs its scripts
- * @typedef {{ kind: FileKind, dispose: () => void }} FileView — dispose: lets go of what the view holds — a PDF's
- *   pages — and of what still loads
+ * @typedef {import('./documents.js').DocumentView} DocumentView
+ * @typedef {{ kind: FileKind, dispose: () => void, document: Promise<DocumentView | undefined> }} FileView — dispose:
+ *   lets go of what the view holds — a PDF's pages — and of what still loads; document: what a page, a PDF or a Word
+ *   document drawn by its own viewer can do — find in it, list its headings — once it is drawn; none for other files
+ *   and for one that could not be drawn
  */
 /**
  * Draws the file into the container, in place of what it held; the container scrolls it.
@@ -94,11 +97,15 @@ export type ViewOptions = {
     view: "document" | "source";
     scripts: "on" | "off";
 };
+export type DocumentView = import("./documents.js").DocumentView;
 /**
- * — dispose: lets go of what the view holds — a PDF's
- *  pages — and of what still loads
+ * — dispose:
+ * lets go of what the view holds — a PDF's pages — and of what still loads; document: what a page, a PDF or a Word
+ * document drawn by its own viewer can do — find in it, list its headings — once it is drawn; none for other files
+ * and for one that could not be drawn
  */
 export type FileView = {
     kind: FileKind;
     dispose: () => void;
+    document: Promise<DocumentView | undefined>;
 };
