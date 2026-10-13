@@ -1,6 +1,6 @@
 {
   "name": "file-views",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Show a file in a web page by what it is: markdown as a document with mermaid diagrams, CSV with its columns coloured, text and code with numbered lines, pictures, HTML pages in a sandbox, PDF and Word documents as pages.",
   "keywords": [
     "viewer",
@@ -22,22 +22,29 @@
   },
   "type": "module",
   "exports": {
-    ".": "./src/index.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
     "./browser": "./dist/file-views.js",
-    "./server": "./src/server/index.js",
+    "./server": {
+      "types": "./types/server/index.d.ts",
+      "default": "./src/server/index.js"
+    },
     "./styles.css": "./styles/file-views.css",
     "./package.json": "./package.json"
   },
   "files": [
     "src/",
     "dist/",
-    "styles/"
+    "styles/",
+    "types/"
   ],
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "build": "node scripts/build.mjs",
+    "build": "node scripts/build.mjs && tsc -p tsconfig.types.json",
     "test": "node --test",
     "check": "tsc -p ."
   },
