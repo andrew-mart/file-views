@@ -102,33 +102,51 @@ export function decodeText(bytes) {
   }
 }
 
-/**
- * @param {string} specifier
- */
-const fileOf = (specifier) => fileURLToPath(import.meta.resolve(specifier));
 const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
-const pdfjsRoot = dirname(fileOf('pdfjs-dist/package.json'));
+
+/**
+ * A file of a package the host installed beside the library — none when it did not: the libraries the views load as
+ * they go are the host's to install (peer dependencies), a host that shows no PDF needs no pdf.js.
+ * @param {string} specifier
+ * @returns {string | undefined}
+ */
+function installed(specifier) {
+  try {
+    return fileURLToPath(import.meta.resolve(specifier));
+  } catch {
+    return undefined;
+  }
+}
+
+/** pdf.js's own folder, when it is installed. */
+const pdfjsRoot = (() => {
+  const manifest = installed('pdfjs-dist/package.json');
+  return manifest === undefined ? undefined : dirname(manifest);
+})();
+const docxPreviewBuild = installed('docx-preview');
 
 /**
  * The library's files for the browser by their path under the address the host serves them at: the views bundled with
- * what they need, their styles, and the libraries they load as they go. docx-preview's ES build imports 'jszip' by
- * name, which a browser cannot resolve: it comes as a script setting a global, as mermaid does.
- * @type {ReadonlyMap<string, string>}
+ * what they need, their styles, and the libraries they load as they go — those installed. docx-preview's ES build
+ * imports 'jszip' by name, which a browser cannot resolve: it comes as a script setting a global, as mermaid does.
+ * @type {[string, string | undefined][]}
  */
-const assetFiles = new Map([
+const assetCandidates = [
   ['file-views.js', join(packageRoot, 'dist', 'file-views.js')],
   ['file-views.css', join(packageRoot, 'styles', 'file-views.css')],
-  ['mermaid.js', fileOf('mermaid/dist/mermaid.min.js')],
-  ['jszip.js', fileOf('jszip/dist/jszip.min.js')],
+  ['mermaid.js', installed('mermaid/dist/mermaid.min.js')],
+  ['jszip.js', installed('jszip/dist/jszip.min.js')],
   // its package names only its main files: the script is found beside them
-  ['docx-preview.js', join(dirname(fileOf('docx-preview')), 'docx-preview.min.js')],
-  ['pdfjs/pdf.mjs', join(pdfjsRoot, 'build', 'pdf.min.mjs')],
-  ['pdfjs/pdf.worker.mjs', join(pdfjsRoot, 'build', 'pdf.worker.min.mjs')],
-]);
+  ['docx-preview.js', docxPreviewBuild === undefined ? undefined : join(dirname(docxPreviewBuild), 'docx-preview.min.js')],
+  ['pdfjs/pdf.mjs', pdfjsRoot === undefined ? undefined : join(pdfjsRoot, 'build', 'pdf.min.mjs')],
+  ['pdfjs/pdf.worker.mjs', pdfjsRoot === undefined ? undefined : join(pdfjsRoot, 'build', 'pdf.worker.min.mjs')],
+];
+/** @type {ReadonlyMap<string, string>} */
+const assetFiles = new Map(assetCandidates.flatMap(([path, file]) => (file === undefined ? [] : [[path, file]])));
 
 /** Folders of pdf.js it loads its parts from as it goes: character maps, fonts, decoders, colour profiles. */
 /** @type {ReadonlyMap<string, string>} */
-const assetFolders = new Map(['cmaps', 'standard_fonts', 'wasm', 'iccs'].map((name) => [`pdfjs/${name}/`, join(pdfjsRoot, name)]));
+const assetFolders = new Map(pdfjsRoot === undefined ? [] : ['cmaps', 'standard_fonts', 'wasm', 'iccs'].map((name) => [`pdfjs/${name}/`, join(pdfjsRoot, name)]));
 
 /**
  * The file of the library's assets at a path under their address — file-views.js, pdfjs/cmaps/78-H.bcmap — none for a
