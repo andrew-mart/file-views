@@ -1,6 +1,6 @@
 {
   "name": "file-views",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Show a file in a web page by what it is: markdown as a document with mermaid diagrams, CSV with its columns coloured, text and code with numbered lines, pictures, HTML pages in a sandbox, PDF and Word documents as pages.",
   "keywords": [
     "viewer",
@@ -68,25 +68,5 @@
     "mermaid": "11.17.2",
     "pdfjs-dist": "6.3.289",
     "typescript": "5.9.3"
-  },
-  "peerDependencies": {
-    "docx-preview": "^0.4.0",
-    "jszip": "^3.10.2",
-    "mermaid": "^11.17.2",
-    "pdfjs-dist": "^6.3.289"
-  },
-  "peerDependenciesMeta": {
-    "docx-preview": {
-      "optional": true
-    },
-    "jszip": {
-      "optional": true
-    },
-    "mermaid": {
-      "optional": true
-    },
-    "pdfjs-dist": {
-      "optional": true
-    }
   }
 }
