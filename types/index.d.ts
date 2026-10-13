@@ -1,5 +1,11 @@
 export { renderMarkdown } from "./markdown.js";
 export { renderFile } from "./view/render.js";
+export type FileKind = import("./kind.js").FileKind;
+export type FileTarget = import("./view/render.js").FileTarget;
+export type FileView = import("./view/render.js").FileView;
+export type Host = import("./view/render.js").Host;
+export type TextReply = import("./view/render.js").TextReply;
+export type ViewOptions = import("./view/render.js").ViewOptions;
 export { codeLanguage, codeLanguages, highlightCode, languageOfPath } from "./code.js";
 export { csvDelimiterOf, csvLines } from "./csv.js";
 export { hasSource, kindOfPath } from "./kind.js";

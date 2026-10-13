@@ -1,6 +1,6 @@
 {
   "name": "file-views",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Show a file in a web page by what it is: markdown as a document with mermaid diagrams, CSV with its columns coloured, text and code with numbered lines, pictures, HTML pages in a sandbox, PDF and Word documents as pages.",
   "keywords": [
     "viewer",

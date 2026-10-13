@@ -7,3 +7,12 @@ export { hasSource, kindOfPath } from './kind.js';
 export { docLinkTarget, splitFrontMatter } from './links.js';
 export { renderMarkdown } from './markdown.js';
 export { renderFile } from './view/render.js';
+
+/**
+ * @typedef {import('./kind.js').FileKind} FileKind
+ * @typedef {import('./view/render.js').FileTarget} FileTarget
+ * @typedef {import('./view/render.js').FileView} FileView
+ * @typedef {import('./view/render.js').Host} Host
+ * @typedef {import('./view/render.js').TextReply} TextReply
+ * @typedef {import('./view/render.js').ViewOptions} ViewOptions
+ */
