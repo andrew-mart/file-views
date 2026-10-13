@@ -1,0 +1,426 @@
+/* file-views: the looks of the views. Colours, fonts and sizes come from custom properties a host sets — on :root or on
+   the container — each with a light default here:
+     --fv-text, --fv-muted, --fv-faint     text, quieter text, line numbers
+     --fv-border, --fv-accent, --fv-danger lines, links and the marked lines, failures
+     --fv-code-ground, --fv-page-ground    behind code and text files; behind a drawn document, a PDF's or a Word
+                                           document's pages
+     --fv-font, --fv-mono                  the document's font, the code's
+     --fv-csv-lightness, --fv-csv-chroma   a table's column colours, as light and as strong as the theme reads them
+     --fv-hl-keyword … --fv-hl-tag         code highlighting by highlight.js's classes */
+
+/* ---------- Messages ---------- */
+
+.fv-message {
+  padding: 14px 16px;
+  color: var(--fv-muted, #6b6b66);
+  font-size: 13.5px;
+}
+
+/* ---------- Text and code: numbered lines, the named lines marked ---------- */
+
+.fv-text {
+  position: relative;
+  min-width: max-content;
+  min-height: 100%;
+  background: var(--fv-code-ground, #f7f6f2);
+}
+
+/* the line height and the room above the first line place the mark over the named lines (view/text.js) */
+.fv-code {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  margin: 0;
+  padding: 10px 16px 40px 12px;
+  color: var(--fv-text, #1f1f1d);
+  font: 12.75px/20px var(--fv-mono, ui-monospace, 'Cascadia Code', Consolas, monospace);
+  white-space: pre;
+  tab-size: 4;
+}
+
+.fv-gutter {
+  color: var(--fv-faint, #9c9a92);
+  text-align: right;
+  user-select: none;
+}
+
+.fv-code a {
+  color: var(--fv-accent, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fv-line-mark {
+  position: absolute;
+  right: 0;
+  left: 0;
+  border-left: 3px solid var(--fv-accent, #2563eb);
+  background: color-mix(in srgb, var(--fv-accent, #2563eb) 16%, transparent);
+  pointer-events: none;
+}
+
+/* a table's columns told apart by colour: eight hues round the circle, over and over */
+.fv-csv-c0 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 25);
+}
+
+.fv-csv-c1 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 250);
+}
+
+.fv-csv-c2 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 140);
+}
+
+.fv-csv-c3 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 310);
+}
+
+.fv-csv-c4 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 70);
+}
+
+.fv-csv-c5 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 195);
+}
+
+.fv-csv-c6 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 350);
+}
+
+.fv-csv-c7 {
+  color: oklch(var(--fv-csv-lightness, 0.5) var(--fv-csv-chroma, 0.15) 110);
+}
+
+/* ---------- Code highlighting (highlight.js classes) ---------- */
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-keyword, .hljs-selector-tag, .hljs-doctag) {
+  color: var(--fv-hl-keyword, #a626a4);
+}
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-string, .hljs-regexp) {
+  color: var(--fv-hl-string, #50a14f);
+}
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-comment, .hljs-quote, .hljs-meta) {
+  color: var(--fv-hl-comment, #8a8a85);
+  font-style: italic;
+}
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-number, .hljs-literal, .hljs-attr, .hljs-attribute, .hljs-property, .hljs-symbol) {
+  color: var(--fv-hl-number, #b76b01);
+}
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-title, .hljs-section) {
+  color: var(--fv-hl-title, #4078f2);
+}
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-built_in, .hljs-type, .hljs-variable, .hljs-params, .hljs-template-variable) {
+  color: var(--fv-hl-type, #c18401);
+}
+
+:is(.fv-code, .fv-markdown pre) :is(.hljs-tag, .hljs-name, .hljs-selector-class, .hljs-selector-id) {
+  color: var(--fv-hl-tag, #e45649);
+}
+
+/* ---------- A markdown document ---------- */
+
+.fv-markdown {
+  max-width: 880px;
+  min-height: 100%;
+  padding: 16px 22px 48px;
+  background: var(--fv-page-ground, transparent);
+  color: var(--fv-text, #1f1f1d);
+  font: 14.5px/1.6 var(--fv-font, system-ui, sans-serif);
+  overflow-wrap: anywhere;
+}
+
+.fv-markdown > :first-child {
+  margin-top: 0;
+}
+
+.fv-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1.4em 0 0.5em;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.fv-markdown h1 {
+  font-size: 1.6em;
+}
+
+.fv-markdown h2 {
+  font-size: 1.3em;
+}
+
+.fv-markdown h3 {
+  font-size: 1.12em;
+}
+
+.fv-markdown :is(p, ul, ol, blockquote, table, pre) {
+  margin: 0 0 0.9em;
+}
+
+.fv-markdown :is(ul, ol) {
+  padding-left: 1.6em;
+}
+
+.fv-markdown a {
+  color: var(--fv-accent, #2563eb);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fv-markdown blockquote {
+  padding: 0 0 0 14px;
+  border-left: 3px solid var(--fv-border, rgba(31, 30, 29, 0.15));
+  color: var(--fv-muted, #6b6b66);
+}
+
+.fv-markdown hr {
+  margin: 1.4em 0;
+  border: 0;
+  border-top: 1px solid var(--fv-border, rgba(31, 30, 29, 0.15));
+}
+
+.fv-markdown img {
+  max-width: 100%;
+}
+
+.fv-markdown :not(pre) > code {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--fv-code-ground, #f7f6f2);
+  font: 0.88em var(--fv-mono, ui-monospace, 'Cascadia Code', Consolas, monospace);
+}
+
+/* a code block names its language in its corner (data-lang, from markdown.js) and copies itself */
+.fv-markdown pre {
+  position: relative;
+  padding: 12px 14px;
+  overflow: auto;
+  border: 1px solid var(--fv-border, rgba(31, 30, 29, 0.15));
+  border-radius: 10px;
+  background: var(--fv-code-ground, #f7f6f2);
+  font: 12.75px/1.55 var(--fv-mono, ui-monospace, 'Cascadia Code', Consolas, monospace);
+}
+
+.fv-markdown pre[data-lang]::before {
+  content: attr(data-lang);
+  float: right;
+  margin: -4px 52px 0 8px;
+  color: var(--fv-faint, #9c9a92);
+  font: 11px var(--fv-font, system-ui, sans-serif);
+}
+
+.fv-copy {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--fv-border, rgba(31, 30, 29, 0.15));
+  border-radius: 6px;
+  background: var(--fv-page-ground, #fff);
+  color: var(--fv-muted, #6b6b66);
+  font: 11px var(--fv-font, system-ui, sans-serif);
+  cursor: pointer;
+  opacity: 0;
+}
+
+.fv-markdown pre:hover .fv-copy,
+.fv-copy:focus-visible {
+  opacity: 1;
+}
+
+.fv-markdown table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.fv-markdown :is(th, td) {
+  padding: 5px 10px;
+  border: 1px solid var(--fv-border, rgba(31, 30, 29, 0.15));
+  vertical-align: top;
+}
+
+.fv-markdown th {
+  font-weight: 600;
+}
+
+/* notes in square brackets, lit when the host asks: .fv-brackets on the container or above */
+.fv-brackets .md-bracket {
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--fv-accent, #2563eb) 14%, transparent);
+  color: var(--fv-accent, #2563eb);
+}
+
+/* a diagram at its own size, a wide one scrolling sideways */
+.fv-diagram {
+  margin: 12px 0;
+  overflow-x: auto;
+}
+
+.fv-markdown .fv-diagram img {
+  max-width: none;
+}
+
+.fv-diagram-error {
+  color: var(--fv-danger, #b42318);
+  font-size: 12.5px;
+}
+
+/* ---------- A picture ---------- */
+
+.fv-image {
+  display: block;
+  max-width: calc(100% - 32px);
+  margin: 16px auto;
+  border: 1px solid var(--fv-border, rgba(31, 30, 29, 0.15));
+  border-radius: 6px;
+  cursor: zoom-in;
+}
+
+.fv-image.fv-zoomed {
+  max-width: none;
+  margin: 16px;
+  cursor: zoom-out;
+}
+
+/* ---------- A page in a frame: it fills the container and scrolls itself; its own ground, white unless it says
+   otherwise ---------- */
+
+.fv-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* ---------- A PDF's pages: white sheets with a shadow, one under another ---------- */
+
+.fv-pdf {
+  min-height: 100%;
+  background: var(--fv-page-ground, transparent);
+}
+
+.fv-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.fv-pdf-page {
+  position: relative;
+  flex: none;
+  background: #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  /* the text layer measures itself and its lines by these; --scale-factor comes from view/pdf.js, the rest as
+     pdf.js's own pdf_viewer.css sets them for a page */
+  --user-unit: 1;
+  --total-scale-factor: calc(var(--scale-factor) * var(--user-unit));
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+}
+
+.fv-pdf-page canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* A page's text, invisible over its picture, where it is on the page: to select and copy. The rules are those of
+   pdf_viewer.css of the pdf.js in use (Apache-2.0): pdf.js builds the layer — spans with --font-height, --scale-x,
+   --rotate — and expects them. */
+.fv-pdf-page .textLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: clip;
+  color-scheme: only light;
+  line-height: 1;
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  caret-color: CanvasText;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.fv-pdf-page .textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+  user-select: text;
+}
+
+.fv-pdf-page .textLayer > :not(.markedContent),
+.fv-pdf-page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.fv-pdf-page .textLayer .markedContent {
+  display: contents;
+}
+
+.fv-pdf-page .textLayer span[role='img'] {
+  cursor: default;
+  user-select: none;
+}
+
+.fv-pdf-page .textLayer ::selection {
+  background: rgba(0, 90, 255, 0.3);
+  color: transparent;
+}
+
+.fv-pdf-page .textLayer br::selection {
+  background: transparent;
+}
+
+.fv-pdf-page .textLayer .endOfContent {
+  display: block;
+  position: absolute;
+  inset: 100% 0 0;
+  z-index: 0;
+  cursor: default;
+  user-select: none;
+}
+
+/* ---------- A Word document's pages, as a PDF's are, not on docx-preview's grey; made smaller to fit when wider
+   (view/docx.js) ---------- */
+
+.fv-docx {
+  min-height: 100%;
+  background: var(--fv-page-ground, transparent);
+}
+
+.fv-docx .docx-wrapper {
+  align-items: center;
+  padding: 16px;
+  background: none;
+}
+
+.fv-docx .docx-wrapper > section.docx {
+  margin-bottom: 12px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* an HTML piece of the document, as tall as what it holds */
+.fv-docx-piece {
+  width: 100%;
+  border: 0;
+}
