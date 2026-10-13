@@ -222,7 +222,7 @@ export const scrollBridge = `<script>
 /**
  * A page's file with the scroll bridge at its end.
  * @param {Uint8Array} page
- * @returns {Uint8Array}
+ * @returns {Uint8Array<ArrayBuffer>} — a buffer of its own: a server sending it as a body takes only such
  */
 export function withScrollBridge(page) {
   const bridge = new TextEncoder().encode(scrollBridge);

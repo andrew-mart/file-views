@@ -37,9 +37,9 @@ export function assetFile(path: string): string | undefined;
 /**
  * A page's file with the scroll bridge at its end.
  * @param {Uint8Array} page
- * @returns {Uint8Array}
+ * @returns {Uint8Array<ArrayBuffer>} — a buffer of its own: a server sending it as a body takes only such
  */
-export function withScrollBridge(page: Uint8Array): Uint8Array;
+export function withScrollBridge(page: Uint8Array): Uint8Array<ArrayBuffer>;
 /**
  * The scroll bridge of a page with scripts: such a page has an origin of its own and the host's page cannot read its
  * document, so its scroll goes by messages — page to host { fileViews: 'scroll', top } after scrolling, at most every
