@@ -21,11 +21,11 @@ test('localUrlsOnly_Should_AllowOnlyAddressesInsideDocument', () => {
   );
 });
 
-// A link in the document keeps its address when it goes to a place in the document or to a page on the web or a
-// mail; a script address — or one that only looks like a web address — loses it
+// A link in the document keeps its address when it goes to a place in the document — a # with a name after it — or to
+// a page on the web or a mail; a script address — or one that only looks like a web address — loses it
 test('keepsDocxLink_Should_KeepPlacesWebAndMailOnly', () => {
   assert.deepEqual(
-    ['#_Toc123', 'https://example.com/a', 'mailto:a@b.c', 'javascript:alert(1)', '\u200Bhttps://example.com', 'file:///C:/secret.txt', undefined].map(keepsDocxLink),
-    [true, true, true, false, false, false, false],
+    ['#_Toc123', ' #_Toc7 ', '#', 'https://example.com/a', 'mailto:a@b.c', 'javascript:alert(1)', '\u200Bhttps://example.com', 'file:///C:/secret.txt', undefined].map(keepsDocxLink),
+    [true, true, false, true, true, false, false, false, false],
   );
 });

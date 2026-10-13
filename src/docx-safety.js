@@ -48,7 +48,9 @@ export function localUrlsOnly(value) {
  */
 export function keepsDocxLink(href) {
   if (href === undefined) return false;
-  if (href.startsWith('#')) return true;
+  const place = href.trim();
+  // a place in the document: a # with a name after it
+  if (place.startsWith('#')) return place.length > 1;
   return URL.canParse(href) && linkProtocols.has(new URL(href).protocol);
 }
 

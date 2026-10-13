@@ -62,9 +62,10 @@ from the assets, with an import map:
 <script type="importmap">{ "imports": { "file-views": "/file-views/file-views.js" } }</script>
 ```
 
-The pieces are there too, for a page that draws on its own: `kindOfPath`, `hasSource`, `renderMarkdown`,
+The pieces are there too, for a page that draws on its own — and, needing no page, from `file-views/core` for a server
+that renders markdown itself: `kindOfPath`, `hasSource`, `renderMarkdown`,
 `docLinkTarget`, `splitFrontMatter`, `csvDelimiterOf`, `csvLines`, `codeLanguage`, `codeLanguages`,
-`languageOfPath`, `highlightCode`.
+`languageOfPath`, `highlightCode`, and a Word document's checks `keepsDocxSelector`, `localUrlsOnly`, `keepsDocxLink`.
 
 ## On the server
 
