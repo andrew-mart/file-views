@@ -106,7 +106,7 @@ const packageRoot = fileURLToPath(new URL('../../', import.meta.url));
 
 /**
  * A file of a package the host installed beside the library — none when it did not: the libraries the views load as
- * they go are the host's to install (peer dependencies), a host that shows no PDF needs no pdf.js.
+ * they go are the host's to install, a host that shows no PDF needs no pdf.js.
  * @param {string} specifier
  * @returns {string | undefined}
  */
