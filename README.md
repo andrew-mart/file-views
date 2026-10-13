@@ -22,7 +22,10 @@ a Word document's styles and links are checked, HTML pages come in a sandbox.
 ## Install
 
 ```sh
-npm install github:andrew-mart/file-views#v0.1.0
+npm install github:andrew-mart/file-views#v0.3.0
+# the libraries the views load as they go are yours to install — those of the files you show; a server that only
+# renders markdown (file-views/core) needs none of them
+npm install pdfjs-dist@^6.3.289 docx-preview@^0.4.0 jszip@^3.10.2 mermaid@^11.17.2
 ```
 
 Node 22 or newer for the server side.
