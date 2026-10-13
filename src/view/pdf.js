@@ -8,6 +8,7 @@ import { h } from '../dom.js';
 import { findAll, joinPieces, spanOf } from '../find-text.js';
 import { isRecord } from '../narrow.js';
 import { findAllName, findCurrentName } from './find-dom.js';
+import { englishDocumentLabels } from './labels.js';
 
 /**
  * The part of pdf.js the view uses.
@@ -24,6 +25,7 @@ import { findAllName, findCurrentName } from './find-dom.js';
  * @typedef {{ page: number, start: number, end: number, range: Range | undefined }} PdfMatch
  * @typedef {import('./page.js').Heading} Heading
  * @typedef {import('./find-dom.js').Finder} Finder
+ * @typedef {import('./labels.js').DocumentLabels} DocumentLabels
  * @typedef {{ dispose: () => void, headings: () => Heading[], rezoom: () => void, finder: Finder }} PdfView
  */
 
@@ -32,11 +34,12 @@ const margin = 16;
 
 /**
  * @param {HTMLElement} container — the pages take its place
- * @param {{ url: string, assets: string, scroller: HTMLElement | undefined }} source — url: the PDF's bytes; assets:
- *   the address of the library's assets; scroller: what scrolls the pages — none: the page's window
+ * @param {{ url: string, assets: string, scroller: HTMLElement | undefined, labels?: DocumentLabels }} source — url: the
+ *   PDF's bytes; assets: the address of the library's assets; scroller: what scrolls the pages — none: the page's
+ *   window; labels: what the view says, in the host's language
  * @returns {Promise<PdfView>} — once the pages have their places
  */
-export async function renderPdf(container, { url, assets, scroller }) {
+export async function renderPdf(container, { url, assets, scroller, labels = englishDocumentLabels }) {
   const library = new URL('pdfjs/', assets);
   const pdfjs = await import(new URL('pdf.mjs', library).href);
   if (!isPdfjs(pdfjs)) throw new Error('pdf.js is not what file-views knows');
@@ -167,7 +170,7 @@ export async function renderPdf(container, { url, assets, scroller }) {
       (/** @type {unknown} */ error) => {
         // a page let go while it was being drawn is no failure
         if (isRecord(error) && (error.name === 'RenderingCancelledException' || error.name === 'AbortException')) return;
-        slot.element.replaceChildren(h('div', { className: 'fv-message', text: `This page is not drawn: ${error instanceof Error ? error.message : String(error)}` }));
+        slot.element.replaceChildren(h('div', { className: 'fv-message', text: labels.pageNotDrawn(error instanceof Error ? error.message : String(error)) }));
       },
     );
     return slot.ready;

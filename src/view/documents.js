@@ -16,10 +16,12 @@ import { renderPdf } from './pdf.js';
  *   offsetOf: a heading's place in what scrolls; keys: the window keys pressed in a page go to; finder: finding in the
  *   document; setZoom: a page's own zoom — the host zooms the others itself; rezoom: drawn again after the host's zoom
  *   changed (a PDF's canvases); setDark: a page's dark look
- * @typedef {{ kind: DocumentKind, url: string, assets: string, scripts: 'on' | 'off', scroller: HTMLElement | undefined, fit: 'width' | 'none' }} DocumentSource
+ * @typedef {import('./labels.js').DocumentLabels} DocumentLabels
+ * @typedef {{ kind: DocumentKind, url: string, assets: string, scripts: 'on' | 'off', scroller: HTMLElement | undefined, fit: 'width' | 'none', labels?: DocumentLabels }} DocumentSource
  *   — url: the document's bytes — a page's address, under which what it loads beside it resolves; assets: the address
  *   of the library's assets; scripts: whether a page runs its scripts; scroller: what scrolls a PDF's pages — none, the
- *   window; fit: a Word document's pages fitted to the width, or left to the host's zoom
+ *   window; fit: a Word document's pages fitted to the width, or left to the host's zoom; labels: what a viewer says to
+ *   its reader, in the host's language — English when not given
  */
 
 /**

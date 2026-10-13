@@ -6,6 +6,7 @@
 import { h } from '../dom.js';
 import { keepsDocxLink, keepsDocxSelector, localUrlsOnly } from '../docx-safety.js';
 import { isRecord } from '../narrow.js';
+import { englishDocumentLabels } from './labels.js';
 import { loadLibrary } from './library.js';
 
 /**
@@ -22,23 +23,24 @@ const piecePolicy = "default-src 'none'; style-src 'unsafe-inline'; img-src data
 
 /**
  * @typedef {import('./page.js').Heading} Heading
+ * @typedef {import('./labels.js').DocumentLabels} DocumentLabels
  * @typedef {{ dispose: () => void, headings: () => Heading[] }} DocxView
  */
 
 /**
  * @param {HTMLElement} container — the pages take its place
- * @param {{ url: string, assets: string, fit: 'width' | 'none' }} source — url: the document's bytes; assets: the
- *   address of the library's assets; fit: a page wider than the room made smaller to fit, as the room changes — or left
- *   to the host's own zoom
+ * @param {{ url: string, assets: string, fit: 'width' | 'none', labels?: DocumentLabels }} source — url: the document's
+ *   bytes; assets: the address of the library's assets; fit: a page wider than the room made smaller to fit, as the room
+ *   changes — or left to the host's own zoom; labels: what the view says, in the host's language
  * @returns {Promise<DocxView>} — once the pages are drawn
  */
-export async function renderDocx(container, { url, assets, fit }) {
+export async function renderDocx(container, { url, assets, fit, labels = englishDocumentLabels }) {
   // docx-preview finds JSZip as a global of the page
   await loadLibrary('JSZip', new URL('jszip.js', assets).href);
   const docx = await loadLibrary('docx', new URL('docx-preview.js', assets).href);
   if (!isDocxPreview(docx)) throw new Error('docx-preview is not what file-views knows');
   const response = await fetch(url);
-  if (!response.ok) throw new Error('the file did not come');
+  if (!response.ok) throw new Error(labels.fileMissing);
   const bytes = await response.blob();
   const pages = h('div', { className: 'fv-docx' });
   container.replaceChildren(pages);

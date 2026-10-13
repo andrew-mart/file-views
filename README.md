@@ -83,6 +83,8 @@ if (hasDocumentView(kind)) {
     scripts: 'off', // a page's scripts
     scroller: container, // what scrolls a PDF's pages; undefined — the window
     fit: 'width', // a Word document's pages fitted to the width, or 'none' — left to your zoom
+    // your words, in your reader's language — English when left out
+    labels: { fileMissing: 'the file did not come', pageNotDrawn: (reason) => `This page is not drawn: ${reason}` },
   });
   view.reveal?.(); // a page is hidden until its look is laid: set its zoom, its dark look, its place first
 }

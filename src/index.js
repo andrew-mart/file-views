@@ -17,6 +17,7 @@ export { renderFile } from './view/render.js';
  * @typedef {import('./kind.js').FileKind} FileKind
  * @typedef {import('./view/diagrams.js').DiagramLabels} DiagramLabels
  * @typedef {import('./view/documents.js').DocumentKind} DocumentKind
+ * @typedef {import('./view/labels.js').DocumentLabels} DocumentLabels
  * @typedef {import('./view/documents.js').DocumentSource} DocumentSource
  * @typedef {import('./view/documents.js').DocumentView} DocumentView
  * @typedef {import('./view/find-dom.js').Finder} Finder
