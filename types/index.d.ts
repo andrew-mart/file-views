@@ -5,6 +5,7 @@ export { renderFile } from "./view/render.js";
 export type FileKind = import("./kind.js").FileKind;
 export type DiagramLabels = import("./view/diagrams.js").DiagramLabels;
 export type DocumentKind = import("./view/documents.js").DocumentKind;
+export type DocumentLabels = import("./view/labels.js").DocumentLabels;
 export type DocumentSource = import("./view/documents.js").DocumentSource;
 export type DocumentView = import("./view/documents.js").DocumentView;
 export type Finder = import("./view/find-dom.js").Finder;

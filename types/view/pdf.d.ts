@@ -1,13 +1,15 @@
 /**
  * @param {HTMLElement} container — the pages take its place
- * @param {{ url: string, assets: string, scroller: HTMLElement | undefined }} source — url: the PDF's bytes; assets:
- *   the address of the library's assets; scroller: what scrolls the pages — none: the page's window
+ * @param {{ url: string, assets: string, scroller: HTMLElement | undefined, labels?: DocumentLabels }} source — url: the
+ *   PDF's bytes; assets: the address of the library's assets; scroller: what scrolls the pages — none: the page's
+ *   window; labels: what the view says, in the host's language
  * @returns {Promise<PdfView>} — once the pages have their places
  */
-export function renderPdf(container: HTMLElement, { url, assets, scroller }: {
+export function renderPdf(container: HTMLElement, { url, assets, scroller, labels }: {
     url: string;
     assets: string;
     scroller: HTMLElement | undefined;
+    labels?: DocumentLabels;
 }): Promise<PdfView>;
 /**
  * The part of pdf.js the view uses.
@@ -121,6 +123,10 @@ export type Heading = import("./page.js").Heading;
  * The part of pdf.js the view uses.
  */
 export type Finder = import("./find-dom.js").Finder;
+/**
+ * The part of pdf.js the view uses.
+ */
+export type DocumentLabels = import("./labels.js").DocumentLabels;
 /**
  * The part of pdf.js the view uses.
  */
