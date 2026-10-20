@@ -90,18 +90,21 @@ function failed(code, error, labels) {
 async function diagramAddress(mermaid, text) {
   const drawn = await mermaid.render(`fv-diagram-${crypto.randomUUID()}`, text);
   if (!isRecord(drawn) || typeof drawn.svg !== 'string') throw new Error('mermaid gave no picture');
-  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(withNaturalSize(drawn.svg))}`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(pictureSvg(drawn.svg))}`;
 }
 
 /**
- * The SVG at its own size, from its viewBox: mermaid sets width="100%", and a picture without a size of its own would
- * stretch to the column. DOMParser runs nothing.
+ * The SVG as a picture takes it: XML, at its own size. mermaid writes its SVG as HTML — a label's line break an
+ * unclosed <br>, its space &nbsp; — and a picture, read as XML, does not show at all: read as HTML, written as XML. And
+ * mermaid sets width="100%": a picture without a size of its own would stretch to the column; the size comes from the
+ * viewBox. DOMParser runs nothing.
  * @param {string} svg
  */
-function withNaturalSize(svg) {
-  const root = new DOMParser().parseFromString(svg, 'image/svg+xml').documentElement;
-  const box = root instanceof SVGSVGElement ? root.viewBox.baseVal : undefined;
-  if (box !== undefined && box.width > 0 && box.height > 0) {
+function pictureSvg(svg) {
+  const root = new DOMParser().parseFromString(svg, 'text/html').querySelector('svg');
+  if (!(root instanceof SVGSVGElement)) throw new Error('mermaid gave no picture');
+  const box = root.viewBox.baseVal;
+  if (box.width > 0 && box.height > 0) {
     root.setAttribute('width', String(Math.ceil(box.width)));
     root.setAttribute('height', String(Math.ceil(box.height)));
   }
