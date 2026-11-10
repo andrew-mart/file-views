@@ -4,7 +4,7 @@ Show a file in a web page by what it is. One call draws it into an element of yo
 
 | File | Shown as |
 |---|---|
-| `.md`, `.markdown`, `.mdown` | a document — pictures and links read from its folder, headings named for links to them, code highlighted, mermaid diagrams drawn, the settings block at its head left out — or its source |
+| `.md`, `.markdown`, `.mdown` | a document — pictures and links read from its folder, headings named for links to them, code highlighted — each block with buttons to wrap its long lines, a `text` one wrapped from the start, and to copy it — mermaid diagrams drawn, the settings block at its head left out — or its source |
 | `.csv`, `.tsv` | its text with numbered lines, columns coloured; the splitting sign — comma, semicolon, tab, bar — found by itself |
 | `.txt`, `.log` | its text with numbered lines, web addresses as links |
 | `.html`, `.htm` | the page in a sandboxed frame, what it loads beside it from its folder; its scripts off unless asked — or its source |

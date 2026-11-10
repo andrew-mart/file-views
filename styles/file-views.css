@@ -194,7 +194,8 @@
   font: 0.88em var(--fv-mono, ui-monospace, 'Cascadia Code', Consolas, monospace);
 }
 
-/* a code block names its language in its corner (data-lang, from markdown.js) and copies itself */
+/* a code block names its language in its corner (data-lang, from markdown.js), wraps its long lines on its Wrap button
+   — a block of words from the start — and copies itself */
 .fv-markdown pre {
   position: relative;
   padding: 12px 14px;
@@ -208,15 +209,39 @@
 .fv-markdown pre[data-lang]::before {
   content: attr(data-lang);
   float: right;
-  margin: -4px 52px 0 8px;
+  margin: -4px 100px 0 8px;
   color: var(--fv-faint, #9c9a92);
   font: 11px var(--fv-font, system-ui, sans-serif);
 }
 
-.fv-copy {
+.fv-markdown pre[data-wrap='on'],
+.fv-markdown pre[data-wrap='on'] code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.fv-code-tools {
   position: absolute;
   top: 6px;
   right: 6px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+}
+
+.fv-markdown pre:hover .fv-code-tools,
+.fv-code-tools:focus-within {
+  opacity: 1;
+}
+
+/* a screen with no pointer to hover shows them at once */
+@media (hover: none) {
+  .fv-code-tools {
+    opacity: 1;
+  }
+}
+
+.fv-code-tools button {
   padding: 1px 7px;
   border: 1px solid var(--fv-border, rgba(31, 30, 29, 0.15));
   border-radius: 6px;
@@ -224,12 +249,11 @@
   color: var(--fv-muted, #6b6b66);
   font: 11px var(--fv-font, system-ui, sans-serif);
   cursor: pointer;
-  opacity: 0;
 }
 
-.fv-markdown pre:hover .fv-copy,
-.fv-copy:focus-visible {
-  opacity: 1;
+.fv-wrap[aria-pressed='true'] {
+  border-color: var(--fv-accent, #2563eb);
+  color: var(--fv-text, #1f1f1d);
 }
 
 .fv-markdown table {

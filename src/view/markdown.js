@@ -1,7 +1,7 @@
 // @ts-check
 // A markdown file drawn as a document: rendered by markdown.js — no raw HTML in it — its pictures and links read from
-// where it lies, its headings named for the links to them, its code blocks with a copy button, its mermaid diagrams
-// drawn.
+// where it lies, its headings named for the links to them, its code blocks with a wrap and a copy button, its mermaid
+// diagrams drawn.
 import DOMPurify from 'dompurify';
 import { h } from '../dom.js';
 import { docLinkTarget } from '../links.js';
@@ -28,7 +28,7 @@ export function renderMarkdownDocument({ path, text, host, theme }) {
   for (const link of doc.querySelectorAll('a[href]')) readLink(path, link, host);
   nameHeadings(doc);
   for (const block of doc.querySelectorAll('pre')) {
-    if (block.querySelector('code.language-mermaid') === null) block.append(copyButton(block.textContent ?? ''));
+    if (block.querySelector('code.language-mermaid') === null) block.append(codeTools(block));
   }
   // a link to a place in the document goes there in the view, not to the page's own address
   doc.addEventListener('click', (event) => {
@@ -87,6 +87,28 @@ function nameHeadings(doc) {
  */
 function slug(words) {
   return words.trim().toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').replace(/\s/g, '-');
+}
+
+/** A block of words, not code — a letter, a message — by the language named: its long lines wrap from the start. */
+const proseBlock = 'code:is(.language-text, .language-txt, .language-plaintext, .language-plain)';
+
+/**
+ * A code block's buttons: Wrap — its long lines wrapped in its width, not scrolled sideways; pressed again, scrolled
+ * again — and Copy.
+ * @param {HTMLPreElement} block
+ */
+function codeTools(block) {
+  const copy = copyButton(block.textContent ?? '');
+  const wrap = h('button', { className: 'fv-wrap', text: 'Wrap', attrs: { type: 'button' } });
+  /** @param {boolean} wrapped */
+  const showWrapped = (wrapped) => {
+    block.dataset.wrap = wrapped ? 'on' : 'off';
+    wrap.setAttribute('aria-pressed', String(wrapped));
+    wrap.title = wrapped ? 'Scroll long lines sideways' : 'Wrap long lines';
+  };
+  showWrapped(block.querySelector(proseBlock) !== null);
+  wrap.addEventListener('click', () => showWrapped(block.dataset.wrap !== 'on'));
+  return h('span', { className: 'fv-code-tools' }, [wrap, copy]);
 }
 
 /**

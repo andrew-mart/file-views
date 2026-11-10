@@ -72,6 +72,38 @@ test('renderFile_Should_DrawMarkdownAsDocument_WithLinksReadFromItsFolder', asyn
   );
 });
 
+// A code block's long lines scroll sideways, or wrap in its width with its Wrap button — pressed again, they scroll
+// again; a block of words, not code — text, a letter — is wrapped from the start. A diagram has no such button
+test('renderFile_Should_WrapCodeBlockOnItsButton_AndTextBlockFromTheStart', async () => {
+  const letter = 'Hi Ann,\n\nThank you for the quick reply — the invoice is attached, and the cut-off is the end of the month.';
+  const { host } = hostWith({ 'D:/dev/x/notes/reply.md': `# Reply\n\n\`\`\`text\n${letter}\n\`\`\`\n\n\`\`\`ts\nconst answer = 42;\n\`\`\`\n\n\`\`\`mermaid\ngraph TD; A-->B\n\`\`\`\n` });
+
+  const { container } = drawn('D:/dev/x/notes/reply.md', host);
+  await settled();
+  const blocks = [...container.querySelectorAll('.fv-markdown pre')];
+  const [text, code] = blocks;
+  const states = () => blocks.map((block) => ({ wrap: block.getAttribute('data-wrap'), pressed: block.querySelector('.fv-wrap')?.getAttribute('aria-pressed') ?? null }));
+  const drawnFirst = states();
+  for (const block of [text, code]) block?.querySelector('.fv-wrap')?.dispatchEvent(new window.MouseEvent('click'));
+
+  assert.deepEqual(
+    { drawnFirst, pressed: states(), copied: code?.querySelector('.fv-copy') === null ? undefined : 'copy' },
+    {
+      drawnFirst: [
+        { wrap: 'on', pressed: 'true' },
+        { wrap: 'off', pressed: 'false' },
+        { wrap: null, pressed: null },
+      ],
+      pressed: [
+        { wrap: 'off', pressed: 'false' },
+        { wrap: 'on', pressed: 'true' },
+        { wrap: null, pressed: null },
+      ],
+      copied: 'copy',
+    },
+  );
+});
+
 // A link to a heading of the document goes to it in the view; the page's own address stays as it is
 test('renderFile_Should_GoToHeading_When_DocumentLinksToIt', async () => {
   const { host } = hostWith({ 'D:/dev/x/guide.md': '[Install](#install-on-windows)\n\n## Install on Windows\n\n## Install on Windows\n' });
