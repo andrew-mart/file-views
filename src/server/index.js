@@ -168,7 +168,8 @@ export function assetFile(path) {
 /**
  * The scroll bridge of a page with scripts: such a page has an origin of its own and the host's page cannot read its
  * document, so its scroll goes by messages — page to host { fileViews: 'scroll', top } after scrolling, at most every
- * 50 ms (a timer, not a frame: a window not in view has no frames); host to page { fileViews: 'scroll-to', top } to go
+ * 50 ms (a timer, not a frame: a window not in view has no frames), and { fileViews: 'height', height } as its height
+ * changes, for a frame that grows to its page's height; host to page { fileViews: 'scroll-to', top } to go
  * back to a place. Going back may not hold at once — the order comes at load, before the page may have its size, and the
  * browser cuts the scroll to nothing — so the place is kept and set again while the document grows, until it holds, 3 s
  * pass, or the reader scrolls. The bridge listens only to the parent window, the host only to its frame (view/page.js):
@@ -199,6 +200,13 @@ export const scrollBridge = `<script>
   function release() {
     wanted = null;
   }
+  var told = null;
+  function tellHeight() {
+    var height = Math.ceil(root.scrollHeight);
+    if (height === told) return;
+    told = height;
+    host.postMessage({ fileViews: 'height', height: height }, '*');
+  }
   window.addEventListener('scroll', function () {
     if (queued) return;
     queued = true;
@@ -207,8 +215,13 @@ export const scrollBridge = `<script>
   ['wheel', 'keydown', 'pointerdown', 'touchstart'].forEach(function (type) {
     window.addEventListener(type, release, { passive: true, capture: true });
   });
-  new ResizeObserver(place).observe(root);
+  new ResizeObserver(function () {
+    place();
+    tellHeight();
+  }).observe(root);
   window.addEventListener('resize', place);
+  window.addEventListener('load', tellHeight);
+  tellHeight();
   window.addEventListener('message', function (e) {
     if (e.source !== host || !e.data || e.data.fileViews !== 'scroll-to' || typeof e.data.top !== 'number') return;
     wanted = e.data.top;

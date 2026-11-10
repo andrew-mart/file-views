@@ -174,6 +174,29 @@ test('renderFile_Should_DrawPageInSandboxedFrame_And_RunScriptsOnlyWhenAsked', (
   });
 });
 
+// A page's frame scrolls itself; asked to grow — on a phone, where a frame in a sheet may not scroll — its holder lets it
+// be as tall as its page and the container scrolls it, the frame as tall as the container to begin with, then as tall
+// as its page tells — a page with scripts tells it by its bridge as soon as it runs, before it has loaded
+test('renderFile_Should_LetPagesFrameGrow_WhenAsked', () => {
+  const { host } = hostWith({});
+  const drawnAs = (/** @type {'scroll' | 'grow'} */ frames, /** @type {'on' | 'off'} */ scripts) => {
+    const container = window.document.createElement('div');
+    window.document.body.append(container);
+    Object.defineProperty(container, 'clientHeight', { value: 640 });
+    renderFile(container, { path: 'D:/dev/x/site/page.html', line: undefined, endLine: undefined }, { view: 'document', scripts, frames }, host);
+    const frame = container.querySelector('iframe');
+    const first = frame?.style.height;
+    window.dispatchEvent(new window.MessageEvent('message', { data: { fileViews: 'height', height: 2400 }, source: frame?.contentWindow ?? null }));
+    return { grows: container.querySelector('.fv-document')?.classList.contains('fv-grows'), first, told: frame?.style.height };
+  };
+
+  assert.deepEqual([drawnAs('scroll', 'off'), drawnAs('grow', 'off'), drawnAs('grow', 'on')], [
+    { grows: false, first: '', told: '' },
+    { grows: true, first: '640px', told: '640px' },
+    { grows: true, first: '640px', told: '2400px' },
+  ]);
+});
+
 // A PDF and a Word document are drawn as their pages; no text is asked for them
 test('renderFile_Should_DrawPdfAndWordAsPages_WithoutAskingForText', async () => {
   const { host, asked } = hostWith({});

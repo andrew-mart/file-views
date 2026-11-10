@@ -76,11 +76,12 @@ test('assetFile_Should_FindLibraryFiles_And_NothingAboveTheirFolders', () => {
   assert.deepEqual({ found, missing: ['nope.js', 'pdfjs/cmaps/../../package.json', 'pdfjs/'].map(assetFile) }, { found: [true, true, true, true, true, true, true, true], missing: [undefined, undefined, undefined] });
 });
 
-// A page with scripts reports its scroll by a bridge added at the end of its file: the page's bytes stay as they were
+// A page with scripts reports its scroll and its height by a bridge added at the end of its file: the page's bytes stay
+// as they were
 test('withScrollBridge_Should_AddBridgeAfterPageUntouched', () => {
   const page = new TextEncoder().encode('<!doctype html><p>hi</p>');
 
   const bridged = new TextDecoder().decode(withScrollBridge(page));
 
-  assert.deepEqual({ head: bridged.startsWith('<!doctype html><p>hi</p><script>'), reports: bridged.includes("fileViews: 'scroll'"), goesBack: bridged.includes("e.data.fileViews !== 'scroll-to'") }, { head: true, reports: true, goesBack: true });
+  assert.deepEqual({ head: bridged.startsWith('<!doctype html><p>hi</p><script>'), reports: bridged.includes("fileViews: 'scroll'"), tellsHeight: bridged.includes("fileViews: 'height'"), goesBack: bridged.includes("e.data.fileViews !== 'scroll-to'") }, { head: true, reports: true, tellsHeight: true, goesBack: true });
 });

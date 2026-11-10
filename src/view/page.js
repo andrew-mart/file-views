@@ -3,10 +3,13 @@
 // fonts, layout and colours. Its scripts off, the frame shares the host's origin so the page can be read — its
 // headings, its text to find in, a dark look laid over it, its scroll — and nothing in it runs. Its scripts on, they
 // run in an origin of their own, out of reach of the host's page: the page cannot be read then, and its scroll comes by
-// messages from the bridge the host's server adds to it (server: withScrollBridge).
+// messages from the bridge the host's server adds to it (server: withScrollBridge). The frame scrolls its page; asked to,
+// it grows as tall as the page instead and what scrolls the host's area scrolls it — a phone may not scroll a frame in
+// a sheet — the page's height read from its document, or told by its bridge.
 import { h } from '../dom.js';
 import { pinnedWithBackground } from '../pinned.js';
 import { domFinder, findAllName, findCurrentName } from './find-dom.js';
+import { frameGrowth, grown } from './frame-height.js';
 
 /**
  * @typedef {import('./find-dom.js').Finder} Finder
@@ -50,14 +53,23 @@ const darkPageCss = `
   img, video, canvas, svg { filter: none !important; }
 `;
 
+/** How often a page that grows its frame is measured, its scripts off: its pictures load, its sections fold. */
+const measureMs = 400;
+/** @type {(height: number) => void} */
+const ignoreHeight = () => {};
+
 /**
  * @param {HTMLElement} container — the frame takes its place in it
- * @param {{ url: string, scripts: 'on' | 'off' }} source — url: the page's address, under which what it loads beside
- *   it resolves
+ * @param {{ url: string, scripts: 'on' | 'off', frame?: 'scroll' | 'grow', scroller?: HTMLElement | undefined }} source
+ *   — url: the page's address, under which what it loads beside it resolves; frame: the frame scrolls its page, or
+ *   grows as tall as its page and the scroller scrolls it — a phone may not scroll a frame in a sheet; scroller: what
+ *   scrolls the host's area — none, the window
  * @returns {Promise<PageView>} — once the page has loaded
  */
-export async function renderPage(container, { url, scripts }) {
+export async function renderPage(container, { url, scripts, frame: framing = 'scroll', scroller }) {
   const frame = h('iframe', { className: 'fv-frame', attrs: { sandbox: scripts === 'on' ? sandboxWithScripts : sandboxWithoutScripts, src: url, referrerpolicy: 'no-referrer' } });
+  const area = scrollArea(scroller);
+  const followHeight = framing === 'grow' ? growFrame(container, frame, area) : ignoreHeight;
   // The page stays hidden until its look is laid on it: drawn in its own light colours before load, after which a dark
   // look comes, it would flash white over the whole area. reveal shows it once the view is ready; a page whose
   // pictures keep load waiting shows as it is after a while.
@@ -68,34 +80,46 @@ export async function renderPage(container, { url, scripts }) {
     frame.style.visibility = '';
   };
   container.replaceChildren(frame);
+  // a page with scripts is listened to before it has loaded: its bridge tells its height as soon as it runs
+  const bridge = scripts === 'on' ? bridgedScroll(frame, followHeight) : undefined;
   await new Promise((resolve) => frame.addEventListener('load', resolve, { once: true }));
 
   // The page's document may not be reachable: a page with scripts has an origin of its own on purpose, and the browser
   // may deem one without them so. It shows anyway, without a look, finding or headings; the scroll of a page with
-  // scripts comes by its bridge.
+  // scripts comes by its bridge, its height as well.
   const win = readableWindow(frame);
   if (win === undefined) {
     reveal();
-    if (scripts !== 'on') return { dispose: () => {} };
-    const bridge = bridgedScroll(frame);
-    return { dispose: bridge.dispose, scroll: bridge.scroll };
+    if (bridge === undefined) return { dispose: () => {} };
+    return { dispose: bridge.dispose, scroll: framing === 'grow' ? grownScroll(frame, area) : bridge.scroll };
   }
+  bridge?.dispose();
   const pageDocument = win.document;
   const findStyle = pageDocument.createElement('style');
   findStyle.id = findStyleId;
   findStyle.textContent = findPageCss;
   (pageDocument.head ?? pageDocument.documentElement).append(findStyle);
+  // a page whose frame grows is measured now and then: its own scripts are off, nothing in it tells
+  const measure = () => {
+    if (frame.isConnected) followHeight(pageDocument.documentElement.scrollHeight);
+    else clearInterval(measuring);
+  };
+  const measuring = framing === 'grow' ? setInterval(measure, measureMs) : undefined;
+  if (framing === 'grow') measure();
 
   return {
-    dispose: () => {},
+    dispose: () => clearInterval(measuring),
     reveal,
-    scroll: {
-      get: () => win.scrollY,
-      // instant: a saved page may ask for smooth scrolling, and going back to a place is no jump by a link
-      set: (top) => win.scrollTo({ top, left: 0, behavior: 'instant' }),
-      subscribe: (listener) => win.addEventListener('scroll', listener, { passive: true }),
-      max: () => pageDocument.documentElement.scrollHeight - win.innerHeight,
-    },
+    scroll:
+      framing === 'grow'
+        ? grownScroll(frame, area)
+        : {
+            get: () => win.scrollY,
+            // instant: a saved page may ask for smooth scrolling, and going back to a place is no jump by a link
+            set: (top) => win.scrollTo({ top, left: 0, behavior: 'instant' }),
+            subscribe: (listener) => win.addEventListener('scroll', listener, { passive: true }),
+            max: () => pageDocument.documentElement.scrollHeight - win.innerHeight,
+          },
     setDark: (on) => {
       const existing = pageDocument.getElementById(darkStyleId);
       if (!on) {
@@ -139,12 +163,70 @@ function readableWindow(frame) {
 }
 
 /**
- * The scroll of a page with scripts, by its bridge's messages: the last place the page told, or was sent to. Messages
- * count only from its own frame; once the frame is gone there is nothing to listen to.
+ * @typedef {{ height: () => number, origin: () => number, top: () => number, to: (top: number) => void, events: EventTarget }} ScrollArea
+ *   — what scrolls the host's area, an element or the window: how tall its view is; where its scrolled content starts
+ *   in the window; how far it is scrolled; scrolled to a place; where its scroll events come
+ */
+
+/**
+ * @param {HTMLElement | undefined} scroller — none: the window
+ * @returns {ScrollArea}
+ */
+function scrollArea(scroller) {
+  if (scroller === undefined) {
+    return { height: () => window.innerHeight, origin: () => -window.scrollY, top: () => window.scrollY, to: (top) => window.scrollTo({ top, behavior: 'instant' }), events: window };
+  }
+  return {
+    height: () => scroller.clientHeight,
+    origin: () => scroller.getBoundingClientRect().top - scroller.scrollTop,
+    top: () => scroller.scrollTop,
+    to: (top) => scroller.scrollTo({ top, behavior: 'instant' }),
+    events: scroller,
+  };
+}
+
+/**
+ * A frame that grows as tall as its page, its holder letting it: as tall as the area in view to begin with — a page
+ * sized by its window's height takes the height in view — then as its page as it is measured (frame-height.js).
+ * @param {HTMLElement} holder
  * @param {HTMLIFrameElement} frame
+ * @param {ScrollArea} area
+ * @returns {(height: number) => void} — the page measured this tall
+ */
+function growFrame(holder, frame, area) {
+  holder.classList.add('fv-grows');
+  let growth = frameGrowth(area.height());
+  frame.style.height = `${growth.height}px`;
+  return (measured) => {
+    growth = grown(growth, measured, Date.now());
+    frame.style.height = `${growth.height}px`;
+  };
+}
+
+/**
+ * The scroll of a page whose frame grows: the area's, in the page's own terms — 0 at its top.
+ * @param {HTMLIFrameElement} frame
+ * @param {ScrollArea} area
+ * @returns {PageScroll}
+ */
+function grownScroll(frame, area) {
+  const frameTop = () => frame.getBoundingClientRect().top - area.origin();
+  return {
+    get: () => Math.max(0, Math.round(area.top() - frameTop())),
+    set: (top) => area.to(frameTop() + top),
+    subscribe: (listener) => area.events.addEventListener('scroll', listener, { passive: true }),
+    max: () => Math.max(0, frame.offsetHeight - area.height()),
+  };
+}
+
+/**
+ * The scroll of a page with scripts, by its bridge's messages: the last place the page told, or was sent to; and its
+ * height, as it tells it. Messages count only from its own frame; once the frame is gone there is nothing to listen to.
+ * @param {HTMLIFrameElement} frame
+ * @param {(height: number) => void} onHeight — the page told it is this tall
  * @returns {{ scroll: PageScroll, dispose: () => void }}
  */
-function bridgedScroll(frame) {
+function bridgedScroll(frame, onHeight) {
   let top = 0;
   /** @type {(() => void)[]} */
   const listeners = [];
@@ -155,7 +237,9 @@ function bridgedScroll(frame) {
       return;
     }
     const data = event.data;
-    if (event.source !== frame.contentWindow || typeof data !== 'object' || data === null || data.fileViews !== 'scroll' || typeof data.top !== 'number') return;
+    if (event.source !== frame.contentWindow || typeof data !== 'object' || data === null) return;
+    if (data.fileViews === 'height' && typeof data.height === 'number') onHeight(data.height);
+    if (data.fileViews !== 'scroll' || typeof data.top !== 'number') return;
     top = data.top;
     for (const listener of listeners) listener();
   };

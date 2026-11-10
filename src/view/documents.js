@@ -17,11 +17,13 @@ import { renderPdf } from './pdf.js';
  *   document; setZoom: a page's own zoom — the host zooms the others itself; rezoom: drawn again after the host's zoom
  *   changed (a PDF's canvases); setDark: a page's dark look
  * @typedef {import('./labels.js').DocumentLabels} DocumentLabels
- * @typedef {{ kind: DocumentKind, url: string, assets: string, scripts: 'on' | 'off', scroller: HTMLElement | undefined, fit: 'width' | 'none', labels?: DocumentLabels }} DocumentSource
+ * @typedef {{ kind: DocumentKind, url: string, assets: string, scripts: 'on' | 'off', scroller: HTMLElement | undefined, fit: 'width' | 'none', frame?: 'scroll' | 'grow', labels?: DocumentLabels }} DocumentSource
  *   — url: the document's bytes — a page's address, under which what it loads beside it resolves; assets: the address
- *   of the library's assets; scripts: whether a page runs its scripts; scroller: what scrolls a PDF's pages — none, the
- *   window; fit: a Word document's pages fitted to the width, or left to the host's zoom; labels: what a viewer says to
- *   its reader, in the host's language — English when not given
+ *   of the library's assets; scripts: whether a page runs its scripts; scroller: what scrolls a PDF's pages, and a
+ *   page's grown frame — none, the window; fit: a Word document's pages fitted to the width, or left to the host's
+ *   zoom; frame: a page's frame scrolls it — the default — or grows as tall as the page and the scroller scrolls it: a
+ *   phone may not scroll a frame in a sheet; labels: what a viewer says to its reader, in the host's language — English
+ *   when not given
  */
 
 /**

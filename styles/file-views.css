@@ -322,6 +322,11 @@
   height: 100%;
 }
 
+/* a frame that grows as tall as its page (view/page.js): the holder takes its height, the container scrolls it */
+.fv-document.fv-grows:has(> .fv-frame) {
+  height: auto;
+}
+
 /* ---------- Finding: every match, and the current one over them; in a PDF's invisible text layer the text stays
    invisible ---------- */
 

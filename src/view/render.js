@@ -25,8 +25,10 @@ import { renderText } from './text.js';
  *   to another file open it the host's way; without it such a link only names the file
  * @property {((root: HTMLElement) => void) | undefined} [decorate] anything more the host does to a drawn document
  * @property {(() => 'light' | 'dark') | undefined} [theme] the page's theme, for diagrams; light without it
- * @typedef {{ view: 'document' | 'source', scripts: 'on' | 'off' }} ViewOptions — view: a markdown document or a page
- *   drawn, or its text; scripts: whether a page runs its scripts
+ * @typedef {{ view: 'document' | 'source', scripts: 'on' | 'off', frames?: 'scroll' | 'grow' }} ViewOptions — view: a
+ *   markdown document or a page drawn, or its text; scripts: whether a page runs its scripts; frames: a page's frame
+ *   scrolls it — the default — or grows as tall as the page and the container scrolls it, as a markdown document's:
+ *   a phone may not scroll a frame in a sheet
  * @typedef {import('./documents.js').DocumentView} DocumentView
  * @typedef {{ kind: FileKind, dispose: () => void, document: Promise<DocumentView | undefined> }} FileView — dispose:
  *   lets go of what the view holds — a PDF's pages — and of what still loads; document: what a page, a PDF or a Word
@@ -56,7 +58,8 @@ export function renderFile(container, target, options, host) {
     const holder = h('div', { className: 'fv-document' }, [message('Loading…')]);
     show(holder);
     const scripts = kind === 'html' ? options.scripts : 'off';
-    drawn = renderDocument(holder, { kind, url: host.documentUrl(target.path, scripts), assets: host.assets, scripts, scroller: container, fit: 'width' }).then(
+    const { frames = 'scroll' } = options;
+    drawn = renderDocument(holder, { kind, url: host.documentUrl(target.path, scripts), assets: host.assets, scripts, scroller: container, fit: 'width', frame: frames }).then(
       (view) => {
         if (disposed) view.dispose();
         else view.reveal?.();

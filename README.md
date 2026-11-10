@@ -48,6 +48,12 @@ view.dispose();
 `view.document` is, for a page, a PDF or a Word document, what it can do once drawn — the same as `renderDocument`
 gives, below; for other files, and for a document that could not be drawn, nothing.
 
+A page's frame scrolls the page itself. On a phone a frame in a sheet over the page may not scroll at all — the swipe
+goes to what is behind — so the options can say `frames: 'grow'`: the frame grows as tall as its page and the
+container scrolls it, as it does a markdown document. The page's height is read from its document, or told by its
+bridge when it runs its scripts; a page sized by its window's height (`min-height: 100vh` and a margin), which would
+grow with its frame without end, is followed no further after a few such steps.
+
 `host` is what your server does for the views:
 
 | Field | What it is |
